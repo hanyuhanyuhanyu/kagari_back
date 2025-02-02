@@ -8,6 +8,7 @@ import (
 	"kagari/handler"
 	handlerimpl "kagari/handler/impl"
 	"kagari/setting"
+	"os"
 
 	"github.com/gin-gonic/gin"
 	"github.com/joho/godotenv"
@@ -15,7 +16,12 @@ import (
 )
 
 func init() {
-	err := godotenv.Load()
+	envFileName := ".env"
+	switch os.Getenv("ENV") {
+	case "production":
+		envFileName = ".env.prod"
+	}
+	err := godotenv.Load(envFileName)
 	if err != nil {
 		panic("error while loading .env")
 	}
