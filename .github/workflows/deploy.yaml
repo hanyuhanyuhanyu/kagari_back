@@ -24,10 +24,12 @@ jobs:
           create_credentials_file: true
           workload_identity_provider: ${{secrets.GCP_WORKLOAD_IDENTITY_PROVIDER}}
           service_account: ${{secrets.GCP_SERVICE_ACCOUNT}}
+      - name: "create env"
+        run: |
+          touch .env
+          echo "NEO4J_CONNECTION_STRING=${{secrets.NEO4J_CONNECTION_STRING}}" >> .env
+          echo "NEO4J_USER=${{secrets.NEO4J_USER}}" >> .env
+          echo "NEO4J_PASSWORD=${{secrets.NEO4J_PASSWORD}}" >> .env
+
       - id: "deploy"
         uses: "google-github-actions/deploy-appengine@v2"
-        with:
-          build_env_vars: |-
-            NEO4J_CONNECTION_STRING=${{secrets.NEO4J_CONNECTION_STRING}}
-            NEO4J_USER=${{secrets.NEO4J_USER}}
-            NEO4J_PASSWORD=${{secrets.NEO4J_PASSWORD}}
