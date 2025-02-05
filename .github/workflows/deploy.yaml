@@ -1,0 +1,33 @@
+name: Build And Put Static Files
+on:
+  push:
+    branches: ["main"]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  id-token: write
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: "Set up Cloud SDK"
+        uses: "google-github-actions/setup-gcloud@v2"
+        with:
+          install_components: "app-engine-go"
+      - id: "auth"
+        name: "Authenticate to Google Cloud"
+        uses: "google-github-actions/auth@v2"
+        with:
+          create_credentials_file: true
+          workload_identity_provider: ${{secrets.GCP_WORKLOAD_IDENTITY_PROVIDER}}
+          service_account: ${{secrets.GCP_SERVICE_ACCOUNT}}
+      - id: "deploy"
+        uses: "google-github-actions/deploy-appengine@v2"
+        with:
+          build_env_vars: |-
+            NEO4J_CONNECTION_STRING=${{secrets.NEO4J_CONNECTION_STRING}}
+            NEO4J_USER=${{secrets.NEO4J_USER}}
+            NEO4J_PASSWORD=${{secrets.NEO4J_PASSWORD}}
