@@ -27,7 +27,7 @@ jobs:
       - id: "deploy"
         uses: "google-github-actions/deploy-appengine@v2"
         with:
-          build_env_vars: |-
+          env_vars: |-
             NEO4J_CONNECTION_STRING=${{secrets.NEO4J_CONNECTION_STRING}}
             NEO4J_USER=${{secrets.NEO4J_USER}}
             NEO4J_PASSWORD=${{secrets.NEO4J_PASSWORD}}
