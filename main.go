@@ -3,6 +3,7 @@ package main
 
 import (
 	"context"
+	"fmt"
 	"kagari/dataaccessor"
 	dataaccessorimpl "kagari/dataaccessor/impl"
 	"kagari/handler"
@@ -23,7 +24,7 @@ func init() {
 	}
 	err := godotenv.Load(envFileName)
 	if err != nil {
-		panic("error while loading .env")
+		panic(fmt.Sprintf("error while loading .env %s", err))
 	}
 }
 
