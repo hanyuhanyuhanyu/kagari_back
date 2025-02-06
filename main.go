@@ -22,7 +22,11 @@ func init() {
 	case "production":
 		envFileName = ".env.prod"
 	}
-	err := godotenv.Load(envFileName)
+	_, err := os.Stat(envFileName)
+	if os.IsNotExist(err) {
+		return
+	}
+	err = godotenv.Load(envFileName)
 	if err != nil {
 		panic(fmt.Sprintf("error while loading .env %s", err))
 	}
