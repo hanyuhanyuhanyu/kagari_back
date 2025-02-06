@@ -9,6 +9,7 @@ import (
 	"kagari/handler"
 	handlerimpl "kagari/handler/impl"
 	"kagari/setting"
+	"log"
 	"os"
 
 	"github.com/gin-gonic/gin"
@@ -40,7 +41,11 @@ func main() {
 		Password:         setting.Neo4jPassword(),
 	}, func(neo4jDriver neo4j.DriverWithContext) {
 		r := gin.Default()
-		articleHandler := handlerimpl.NewArticleHandler(ctx, (dataaccessorimpl.NewArticleAccessor(ctx, neo4jDriver)))
+		acc, err := dataaccessorimpl.NewArticleAccessor(ctx, neo4jDriver)
+		if err != nil {
+			log.Fatalf("create accessor fail %v", err)
+		}
+		articleHandler := handlerimpl.NewArticleHandler(ctx, acc)
 		handler.BuildRoute(r, handler.Handlers{ArticleHandler: *articleHandler})
 		r.Run()
 	})

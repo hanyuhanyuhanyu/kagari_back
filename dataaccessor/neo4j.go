@@ -33,9 +33,13 @@ func (ch *connectionHandler) Close(ctx context.Context) error {
 	}
 	return ch.driver.Close(ctx)
 }
-func WithNeo4jConnection(ctx context.Context, conInfo ConnectionInfo, f func(neo4cDriver neo4j.DriverWithContext)) {
+func WithNeo4jConnection(ctx context.Context, conInfo ConnectionInfo, f func(neo4cDriver neo4j.DriverWithContext)) error {
 	ch := connectionHandler{}
-	ch.Open(ctx, conInfo)
+	_, err := ch.Open(ctx, conInfo)
+	if err != nil {
+		return err
+	}
 	defer ch.Close(ctx)
 	f(ch.driver)
+	return nil
 }
