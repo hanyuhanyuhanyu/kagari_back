@@ -12,6 +12,7 @@ import (
 	"github.com/google/uuid"
 	"github.com/neo4j/neo4j-go-driver/v5/neo4j"
 	"github.com/neo4j/neo4j-go-driver/v5/neo4j/dbtype"
+	"github.com/samber/lo"
 )
 
 func NewArticleAccessor(ctx context.Context, driver neo4j.DriverWithContext) (service.ArticleAccessor, error) {
@@ -30,6 +31,22 @@ type ArticleAccessor struct {
 	s3cli  *s3.Client
 }
 
+func (aa *ArticleAccessor) Search(ctx context.Context, param entity.ArticleSearchParameter) ([]entity.Article, error) {
+	result, err := neo4j.ExecuteQuery(ctx, aa.driver, "MATCH (a:Article) ORDER BY a.created_at LIMIT $limit SKIP $offset RETURN a", map[string]any{
+		"limit":  param.GetLimit(),
+		"offset": param.GetOffset(),
+	}, neo4j.EagerResultTransformer)
+	if err != nil {
+		return nil, err
+	}
+	first := result.Records[0]
+	if first == nil {
+		return nil, nil
+	}
+	return lo.Map(result.Records, func(r *neo4j.Record, _ int) entity.Article {
+		return *(&entity.Article{}).FromMap(r.AsMap()["a"].(dbtype.Node).GetProperties())
+	}), nil
+}
 func (aa *ArticleAccessor) GetOne(ctx context.Context, id string) (*entity.Article, error) {
 	result, err := neo4j.ExecuteQuery(ctx, aa.driver, "MATCH (a:Article {id: $id}) RETURN a", map[string]any{
 		"id": id,

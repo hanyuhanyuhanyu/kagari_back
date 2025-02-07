@@ -28,6 +28,6 @@ func (ah *ArticleHandler) Get(c *gin.Context) {
 			c.JSON(http.StatusNotFound, gin.H{"error": "article not found"})
 		}
 	default:
-		c.JSON(http.StatusOK, article.Json())
+		c.JSON(http.StatusOK, article.AsGinH())
 	}
 }

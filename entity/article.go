@@ -19,7 +19,7 @@ func (a *Article) FromMap(m map[string]any) *Article {
 	a.URL = m["url"].(string)
 	return a
 }
-func (a *Article) Json() gin.H {
+func (a *Article) AsGinH() gin.H {
 	return gin.H{
 		"id":  a.ID,
 		"url": a.URL,
@@ -34,4 +34,9 @@ type UploadingArticle struct {
 
 func (ua *UploadingArticle) CreateSavePath(id string) string {
 	return fmt.Sprintf("%s/%s_%s.md", time.Now().UTC().Format("200601"), regexp.MustCompile(`\.md$`).ReplaceAllString(ua.OriginalFileName, ""), id)
+}
+
+type ArticleSearchParameter struct {
+	Article
+	Pager
 }
