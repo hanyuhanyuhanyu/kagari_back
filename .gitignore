@@ -1,4 +1,5 @@
 .env*
 *.local
 kmd
+main
 !.env_sample
