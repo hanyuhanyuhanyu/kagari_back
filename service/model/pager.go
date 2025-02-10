@@ -1,4 +1,4 @@
-package entity
+package model
 
 type Pager struct {
 	Limit  uint64

@@ -4,8 +4,8 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"kagari/entity"
 	"kagari/service"
+	"kagari/service/model"
 	"kagari/util/jsonutil"
 	"os"
 	"path/filepath"
@@ -64,7 +64,7 @@ func (ah *ArticleHandler) upload() *cli.Command {
 			if err != nil {
 				return err
 			}
-			id, err := ah.service.Post(ctx, &entity.UploadingArticle{
+			id, err := ah.service.Post(ctx, &model.UploadingArticle{
 				Body:             file,
 				Title:            title,
 				OriginalFileName: filepath.Base(filePath),
@@ -103,8 +103,8 @@ func (ah *ArticleHandler) search() *cli.Command {
 			},
 		},
 		Action: func(ctx context.Context, _ *cli.Command) error {
-			articles, err := ah.service.Search(ctx, entity.ArticleSearchParameter{
-				Pager: entity.Pager{
+			articles, err := ah.service.Search(ctx, model.ArticleSearchParameter{
+				Pager: model.Pager{
 					Limit:  limit,
 					Offset: offset,
 				},
