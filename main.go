@@ -51,7 +51,7 @@ func main() {
 		r.Use(cors.New(cors.Config{
 			AllowOrigins: []string{
 				"http://localhost:3001",
-				"https://kagari-frontend-static.s3.ap-northeast-1.amazonaws.com",
+				"http://kagari-frontend-static.s3-website-ap-northeast-1.amazonaws.com",
 			},
 			AllowMethods: []string{
 				"GET",
