@@ -6,8 +6,8 @@ import (
 	"fmt"
 	"kagari/dataaccessor"
 	dataaccessorimpl "kagari/dataaccessor/impl"
-	"kagari/handler"
 	handlerimpl "kagari/handler/impl"
+	"kagari/router"
 	"kagari/setting"
 	"log"
 	"os"
@@ -46,7 +46,7 @@ func main() {
 			log.Fatalf("create accessor fail %v", err)
 		}
 		articleHandler := handlerimpl.NewArticleHandler(ctx, acc)
-		handler.BuildRoute(r, handler.Handlers{ArticleHandler: *articleHandler})
+		router.BuildRoute(r, router.Handlers{ArticleHandler: *articleHandler})
 		r.Run()
 	})
 }
