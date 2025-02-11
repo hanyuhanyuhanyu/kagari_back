@@ -11,7 +11,9 @@ import (
 	"kagari/setting"
 	"log"
 	"os"
+	"time"
 
+	"github.com/gin-contrib/cors"
 	"github.com/gin-gonic/gin"
 	"github.com/joho/godotenv"
 	"github.com/neo4j/neo4j-go-driver/v5/neo4j"
@@ -46,6 +48,29 @@ func main() {
 			log.Fatalf("create accessor fail %v", err)
 		}
 		articleHandler := handlerimpl.NewArticleHandler(ctx, acc)
+		r.Use(cors.New(cors.Config{
+			AllowOrigins: []string{
+				"http://localhost:3001",
+				"https://kagari-frontend-static.s3.ap-northeast-1.amazonaws.com",
+			},
+			AllowMethods: []string{
+				"GET",
+				"POST",
+				"PATCH",
+				"PUT",
+				"DELETE",
+				"OPTION",
+			},
+			AllowHeaders: []string{
+				"Access-Control-Allow-Credentials",
+				"Access-Control-Allow-Headers",
+				"Content-Type",
+				"Content-Length",
+				"Accept-Encoding",
+				"Authorization"},
+			AllowCredentials: true,
+			MaxAge:           8 * time.Hour,
+		}))
 		router.BuildRoute(r, router.Handlers{ArticleHandler: *articleHandler})
 		r.Run()
 	})
