@@ -25,11 +25,11 @@ func response(c *gin.Context, res handler.Response) {
 	}
 }
 func BuildRoute(r *gin.Engine, handlers Handlers) {
-	r.GET("/article/search", func(c *gin.Context) {
+	r.GET("/article/:id", func(c *gin.Context) {
 		res, _ := handlers.ArticleHandler.Get(c, c.Param("id"))
 		response(c, res)
 	})
-	r.GET("/article/:id", func(c *gin.Context) {
+	r.GET("/article/search", func(c *gin.Context) {
 		pager, err := getPagerFromQuery(c)
 		if err != nil {
 			c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})

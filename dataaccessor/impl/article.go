@@ -55,10 +55,10 @@ func (aa *ArticleAccessor) GetOne(ctx context.Context, id string) (*entity.Artic
 	if err != nil {
 		return nil, err
 	}
-	first := result.Records[0]
-	if first == nil {
+	if len(result.Records) == 0 {
 		return nil, nil
 	}
+	first := result.Records[0]
 	return (&entity.Article{}).FromMap(first.AsMap()["a"].(dbtype.Node).GetProperties()), nil
 }
 func (aa *ArticleAccessor) Upload(ctx context.Context, article *model.UploadingArticle) (string, error) {
