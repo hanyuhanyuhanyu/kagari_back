@@ -20,9 +20,6 @@ func getPagerFromQuery(c *gin.Context) (*model.Pager, error) {
 	return model.PagerFromString(limit, offset)
 }
 func response(c *gin.Context, res handler.Response) {
-	c.Header("Access-Control-Allow-Origin", "http://localhost:3001")
-	c.Header("Access-Control-Allow-Headers", "Content-Json")
-	c.Header("Access-Control-Allow-Methods", "GET,POST,PUT,PATCH,DELETE,OPTION")
 	switch res.ContentType {
 	default:
 		c.JSON(res.Status, res.Body)
