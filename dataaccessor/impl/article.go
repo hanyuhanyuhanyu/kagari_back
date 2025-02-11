@@ -6,6 +6,7 @@ import (
 	"kagari/dataaccessor"
 	"kagari/entity"
 	"kagari/service"
+	"kagari/service/model"
 	"time"
 
 	"github.com/aws/aws-sdk-go-v2/service/s3"
@@ -31,7 +32,7 @@ type ArticleAccessor struct {
 	s3cli  *s3.Client
 }
 
-func (aa *ArticleAccessor) Search(ctx context.Context, param entity.ArticleSearchParameter) ([]entity.Article, error) {
+func (aa *ArticleAccessor) Search(ctx context.Context, param model.ArticleSearchParameter) ([]entity.Article, error) {
 	result, err := neo4j.ExecuteQuery(ctx, aa.driver, "MATCH (a:Article) ORDER BY a.created_at LIMIT $limit SKIP $offset RETURN a", map[string]any{
 		"limit":  param.GetLimit(),
 		"offset": param.GetOffset(),
@@ -60,7 +61,7 @@ func (aa *ArticleAccessor) GetOne(ctx context.Context, id string) (*entity.Artic
 	}
 	return (&entity.Article{}).FromMap(first.AsMap()["a"].(dbtype.Node).GetProperties()), nil
 }
-func (aa *ArticleAccessor) Upload(ctx context.Context, article *entity.UploadingArticle) (string, error) {
+func (aa *ArticleAccessor) Upload(ctx context.Context, article *model.UploadingArticle) (string, error) {
 	id := uuid.NewString()
 	bucket := dataaccessor.KagariMarkdownBucket
 	key := article.CreateSavePath(id)

@@ -1,42 +1,20 @@
 package entity
 
 import (
-	"fmt"
-	"io"
-	"regexp"
 	"time"
-
-	"github.com/gin-gonic/gin"
 )
 
 type Article struct {
-	ID  string
-	URL string
+	ID        string    `json:"id"`
+	URL       string    `json:"url"`
+	Title     string    `json:"title"`
+	CreatedAt time.Time `json:"created_at"`
 }
 
 func (a *Article) FromMap(m map[string]any) *Article {
 	a.ID = m["id"].(string)
 	a.URL = m["url"].(string)
+	a.Title = m["title"].(string)
+	a.CreatedAt = m["created_at"].(time.Time)
 	return a
-}
-func (a *Article) AsGinH() gin.H {
-	return gin.H{
-		"id":  a.ID,
-		"url": a.URL,
-	}
-}
-
-type UploadingArticle struct {
-	Body             io.Reader
-	OriginalFileName string
-	Title            string
-}
-
-func (ua *UploadingArticle) CreateSavePath(id string) string {
-	return fmt.Sprintf("%s/%s_%s.md", time.Now().UTC().Format("200601"), regexp.MustCompile(`\.md$`).ReplaceAllString(ua.OriginalFileName, ""), id)
-}
-
-type ArticleSearchParameter struct {
-	Article
-	Pager
 }
