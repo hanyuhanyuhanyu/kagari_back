@@ -2,11 +2,10 @@ package impl
 
 import (
 	"context"
+	"kagari/handler"
 	"kagari/service"
 	"kagari/service/model"
 	"net/http"
-
-	"github.com/gin-gonic/gin"
 )
 
 type ArticleHandler struct {
@@ -17,29 +16,51 @@ func NewArticleHandler(ctx context.Context, acc service.ArticleAccessor) *Articl
 	return &ArticleHandler{service.NewArticleService(acc)}
 }
 
-func (ah *ArticleHandler) Get(c *gin.Context, id string) {
-	article, err := ah.service.GetArticle(c.Request.Context(), id)
+func (ah *ArticleHandler) Get(c context.Context, id string) (handler.Response, error) {
+	article, err := ah.service.GetArticle(c, id)
 	switch {
 	case err != nil:
 		{
-			c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+			return handler.Response{
+				Status: http.StatusInternalServerError,
+				Body: map[string]any{
+					"error": err.Error(),
+				},
+			}, err
 		}
 	case article == nil:
 		{
-			c.JSON(http.StatusNotFound, gin.H{"error": "article not found"})
+			return handler.Response{
+				Status: http.StatusNotFound,
+				Body: map[string]any{
+					"error": "article not found",
+				},
+			}, nil
+
 		}
 	default:
-		c.JSON(http.StatusOK, article)
+		return handler.Response{
+			Status: http.StatusOK,
+			Body:   article,
+		}, nil
 	}
 }
-func (ah *ArticleHandler) Search(c *gin.Context, param model.ArticleSearchParameter) {
-	article, err := ah.service.Search(c.Request.Context(), param)
+func (ah *ArticleHandler) Search(c context.Context, param model.ArticleSearchParameter) (handler.Response, error) {
+	articles, err := ah.service.Search(c, param)
 	switch {
 	case err != nil:
 		{
-			c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+			return handler.Response{
+				Status: http.StatusInternalServerError,
+				Body: map[string]any{
+					"error": err.Error(),
+				},
+			}, err
 		}
 	default:
-		c.JSON(http.StatusOK, article)
+		return handler.Response{
+			Status: http.StatusOK,
+			Body:   articles,
+		}, nil
 	}
 }
