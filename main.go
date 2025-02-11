@@ -4,9 +4,9 @@ package main
 import (
 	"context"
 	"fmt"
-	"kagari/dataaccessor"
-	dataaccessorimpl "kagari/dataaccessor/impl"
 	handlerimpl "kagari/handler/impl"
+	"kagari/persistence"
+	persistenceimpl "kagari/persistence/impl"
 	"kagari/router"
 	"kagari/setting"
 	"log"
@@ -35,13 +35,13 @@ func init() {
 
 func main() {
 	ctx := context.Background()
-	dataaccessor.WithNeo4jConnection(ctx, dataaccessor.ConnectionInfo{
+	persistence.WithNeo4jConnection(ctx, persistence.ConnectionInfo{
 		ConnectionString: setting.Neo4jConnectionString(),
 		User:             setting.Neo4jUser(),
 		Password:         setting.Neo4jPassword(),
 	}, func(neo4jDriver neo4j.DriverWithContext) {
 		r := gin.Default()
-		acc, err := dataaccessorimpl.NewArticleAccessor(ctx, neo4jDriver)
+		acc, err := persistenceimpl.NewArticleAccessor(ctx, neo4jDriver)
 		if err != nil {
 			log.Fatalf("create accessor fail %v", err)
 		}

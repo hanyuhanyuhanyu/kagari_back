@@ -3,8 +3,8 @@ package impl
 import (
 	"context"
 	"errors"
-	"kagari/dataaccessor"
 	"kagari/entity"
+	"kagari/persistence"
 	"kagari/service"
 	"kagari/service/model"
 	"time"
@@ -17,7 +17,7 @@ import (
 )
 
 func NewArticleAccessor(ctx context.Context, driver neo4j.DriverWithContext) (service.ArticleAccessor, error) {
-	s3cli, err := dataaccessor.InitS3Client(ctx)
+	s3cli, err := persistence.InitS3Client(ctx)
 	if err != nil {
 		return nil, err
 	}
@@ -63,7 +63,7 @@ func (aa *ArticleAccessor) GetOne(ctx context.Context, id string) (*entity.Artic
 }
 func (aa *ArticleAccessor) Upload(ctx context.Context, article *model.UploadingArticle) (string, error) {
 	id := uuid.NewString()
-	bucket := dataaccessor.KagariMarkdownBucket
+	bucket := persistence.KagariMarkdownBucket
 	key := article.CreateSavePath(id)
 	contentType := "text/markdown; charset=UTF-8"
 	sess := aa.driver.NewSession(ctx, neo4j.SessionConfig{})

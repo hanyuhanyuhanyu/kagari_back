@@ -3,9 +3,9 @@ package main
 import (
 	"context"
 	"fmt"
-	"kagari/dataaccessor"
-	dataaccessorimpl "kagari/dataaccessor/impl"
 	"kagari/kmdtool/handler"
+	"kagari/persistence"
+	persistenceimpl "kagari/persistence/impl"
 	"kagari/setting"
 	"log"
 	"os"
@@ -37,7 +37,7 @@ type handlers struct {
 
 func buildHandlers(ctx context.Context, neo4jDriver neo4j.DriverWithContext) (ss *handlers, err error) {
 	ss = &handlers{}
-	articleAccessor, err := dataaccessorimpl.NewArticleAccessor(ctx, neo4jDriver)
+	articleAccessor, err := persistenceimpl.NewArticleAccessor(ctx, neo4jDriver)
 	if err != nil {
 		return nil, err
 	}
@@ -46,7 +46,7 @@ func buildHandlers(ctx context.Context, neo4jDriver neo4j.DriverWithContext) (ss
 }
 func main() {
 	ctx := context.Background()
-	err := dataaccessor.WithNeo4jConnection(ctx, dataaccessor.ConnectionInfo{
+	err := persistence.WithNeo4jConnection(ctx, persistence.ConnectionInfo{
 		ConnectionString: setting.Neo4jConnectionString(),
 		User:             setting.Neo4jUser(),
 		Password:         setting.Neo4jPassword(),

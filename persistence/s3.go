@@ -1,4 +1,4 @@
-package dataaccessor
+package persistence
 
 import (
 	"context"
