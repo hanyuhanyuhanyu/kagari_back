@@ -14,18 +14,18 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
       - name: "Set up Cloud SDK"
-        uses: "google-github-actions/setup-gcloud@77e7a55"
+        uses: "google-github-actions/setup-gcloud@77e7a554d41e2ee56fc945c52dfd3f33d12def9a"
         with:
           install_components: "app-engine-go"
       - id: "auth"
         name: "Authenticate to Google Cloud"
-        uses: "google-github-actions/auth@71f9864"
+        uses: "google-github-actions/auth@71f986410dfbc7added4569d411d040a91dc6935"
         with:
           create_credentials_file: true
           workload_identity_provider: ${{secrets.GCP_WORKLOAD_IDENTITY_PROVIDER}}
           service_account: ${{secrets.GCP_SERVICE_ACCOUNT}}
       - id: "deploy"
-        uses: "google-github-actions/deploy-appengine@2da1d59"
+        uses: "google-github-actions/deploy-appengine@2da1d596e766c0581fca51c92979093ff8a10f67"
         with:
           env_vars: |-
             NEO4J_CONNECTION_STRING=${{secrets.NEO4J_CONNECTION_STRING}}
