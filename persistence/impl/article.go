@@ -33,7 +33,7 @@ type ArticleAccessor struct {
 }
 
 func (aa *ArticleAccessor) Search(ctx context.Context, param model.ArticleSearchParameter) ([]entity.Article, error) {
-	result, err := neo4j.ExecuteQuery(ctx, aa.driver, "MATCH (a:Article) ORDER BY a.created_at LIMIT $limit SKIP $offset RETURN a", map[string]any{
+	result, err := neo4j.ExecuteQuery(ctx, aa.driver, "MATCH (a:Article) ORDER BY a.created_at DESC LIMIT $limit SKIP $offset RETURN a", map[string]any{
 		"limit":  param.GetLimit(),
 		"offset": param.GetOffset(),
 	}, neo4j.EagerResultTransformer)
