@@ -1,9 +1,11 @@
 package handler
 
 import (
+	"bytes"
 	"context"
 	"errors"
 	"fmt"
+	"io"
 	"kagari/service"
 	"kagari/service/model"
 	"kagari/util/jsonutil"
@@ -32,6 +34,7 @@ func (ah *ArticleHandler) Handlers() *cli.Command {
 		},
 	}
 }
+
 func (ah *ArticleHandler) upload() *cli.Command {
 	var title string
 
@@ -64,11 +67,22 @@ func (ah *ArticleHandler) upload() *cli.Command {
 			if err != nil {
 				return err
 			}
-			id, err := ah.service.Post(ctx, &model.UploadingArticle{
-				Body:             file,
+			text, err := io.ReadAll(file)
+			if err != nil {
+				return err
+			}
+			article := &model.UploadingArticle{
+				Body:             text,
 				Title:            title,
 				OriginalFileName: filepath.Base(filePath),
-			})
+			}
+			images := article.FindImagePaths()
+			sources, err := getImageSources(filepath.Dir(filePath), images)
+			if err != nil {
+				return err
+			}
+			article.ImageSources = sources
+			id, err := ah.service.Post(ctx, article)
 			if err != nil {
 				return err
 			}
@@ -76,6 +90,24 @@ func (ah *ArticleHandler) upload() *cli.Command {
 			return nil
 		},
 	}
+}
+
+func getImageSources(parent string, imgPaths [][]byte) (maps map[string]io.Reader, err error) {
+	maps = make(map[string]io.Reader)
+	for _, i := range imgPaths {
+		str := string(i)
+		// / or .で始まっていなければローカルを指していないとみなす
+		if !bytes.HasPrefix(i, []byte("/")) && !bytes.HasPrefix(i, []byte(".")) {
+			continue
+		}
+		original := filepath.Join(parent, str)
+		reader, err := os.Open(original)
+		if err != nil {
+			return maps, err
+		}
+		maps[str] = reader
+	}
+	return
 }
 
 func (ah *ArticleHandler) search() *cli.Command {

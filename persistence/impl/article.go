@@ -1,12 +1,15 @@
 package impl
 
 import (
+	"bytes"
 	"context"
 	"errors"
+	"fmt"
 	"kagari/entity"
 	"kagari/persistence"
 	"kagari/service"
 	"kagari/service/model"
+	"path/filepath"
 	"time"
 
 	"github.com/aws/aws-sdk-go-v2/service/s3"
@@ -61,10 +64,30 @@ func (aa *ArticleAccessor) GetOne(ctx context.Context, id string) (*entity.Artic
 	first := result.Records[0]
 	return (&entity.Article{}).FromMap(first.AsMap()["a"].(dbtype.Node).GetProperties()), nil
 }
+func createSavePath(originalFileName string) (id, keyPath string) {
+	id = uuid.NewString()
+	ext := filepath.Ext(originalFileName)
+	keyPath = fmt.Sprintf("%s/%s_%s%s", time.Now().UTC().Format("200601"), originalFileName[:len(originalFileName)-len(ext)], id, ext)
+	return
+
+}
+func (aa *ArticleAccessor) uploadImages(ctx context.Context, article *model.UploadingArticle) error {
+	for key, val := range article.ImageSources {
+		_, savePath := createSavePath(filepath.Base(key))
+		bucket := persistence.KagariMarkdownBucket
+		contentType := fmt.Sprintf("image/%s", filepath.Ext(key))
+		_, err := aa.s3cli.PutObject(ctx, &s3.PutObjectInput{Bucket: &bucket, Key: &savePath, Body: val, ContentType: &contentType})
+		if err != nil {
+			return err
+		}
+		savedPath := filepath.Join(fmt.Sprintf("https://%s.s3.ap-northeast-1.amazonaws.com/", bucket), savePath)
+		article.ReplaceImageSource(key, savedPath)
+	}
+	return nil
+}
 func (aa *ArticleAccessor) Upload(ctx context.Context, article *model.UploadingArticle) (string, error) {
-	id := uuid.NewString()
+	id, key := createSavePath(article.OriginalFileName)
 	bucket := persistence.KagariMarkdownBucket
-	key := article.CreateSavePath(id)
 	contentType := "text/markdown; charset=UTF-8"
 	sess := aa.driver.NewSession(ctx, neo4j.SessionConfig{})
 	_, err := sess.ExecuteWrite(ctx, func(tx neo4j.ManagedTransaction) (any, error) {
@@ -77,7 +100,11 @@ func (aa *ArticleAccessor) Upload(ctx context.Context, article *model.UploadingA
 		if err != nil {
 			return nil, err
 		}
-		_, err = aa.s3cli.PutObject(ctx, &s3.PutObjectInput{Bucket: &bucket, Key: &key, Body: article.Body, ContentType: &contentType})
+		err = aa.uploadImages(ctx, article)
+		if err != nil {
+			return nil, err
+		}
+		_, err = aa.s3cli.PutObject(ctx, &s3.PutObjectInput{Bucket: &bucket, Key: &key, Body: bytes.NewReader(article.Body), ContentType: &contentType})
 		return nil, err
 	})
 	return id, err
