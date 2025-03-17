@@ -1,6 +1,7 @@
 module kagari
 
 go 1.23.5
+toolchain go1.24.1
 
 require (
 	github.com/aws/aws-sdk-go-v2/config v1.29.6
@@ -9,7 +10,7 @@ require (
 	github.com/gin-gonic/gin v1.10.0
 	github.com/google/uuid v1.6.0
 	github.com/joho/godotenv v1.5.1
-	github.com/neo4j/neo4j-go-driver/v5 v5.27.0
+	github.com/neo4j/neo4j-go-driver/v5 v5.28.0
 	github.com/samber/lo v1.49.1
 	github.com/urfave/cli/v3 v3.0.0-beta1
 )
