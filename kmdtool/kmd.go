@@ -6,12 +6,11 @@ import (
 	"kagari/kmdtool/handler"
 	"kagari/persistence"
 	persistenceimpl "kagari/persistence/impl"
-	"kagari/setting"
 	"log"
 	"os"
 
+	pgx "github.com/jackc/pgx/v5"
 	"github.com/joho/godotenv"
-	"github.com/neo4j/neo4j-go-driver/v5/neo4j"
 	"github.com/urfave/cli/v3"
 )
 
@@ -35,9 +34,9 @@ type handlers struct {
 	article *handler.ArticleHandler
 }
 
-func buildHandlers(ctx context.Context, neo4jDriver neo4j.DriverWithContext) (ss *handlers, err error) {
+func buildHandlers(ctx context.Context, conn *pgx.Conn) (ss *handlers, err error) {
 	ss = &handlers{}
-	articleAccessor, err := persistenceimpl.NewArticleAccessor(ctx, neo4jDriver)
+	articleAccessor, err := persistenceimpl.NewArticleAccessor(ctx, conn)
 	if err != nil {
 		return nil, err
 	}
@@ -46,12 +45,8 @@ func buildHandlers(ctx context.Context, neo4jDriver neo4j.DriverWithContext) (ss
 }
 func main() {
 	ctx := context.Background()
-	err := persistence.WithNeo4jConnection(ctx, persistence.ConnectionInfo{
-		ConnectionString: setting.Neo4jConnectionString(),
-		User:             setting.Neo4jUser(),
-		Password:         setting.Neo4jPassword(),
-	}, func(neo4jDriver neo4j.DriverWithContext) {
-		handlers, err := buildHandlers(ctx, neo4jDriver)
+	err := persistence.WithPsqlConnection(ctx, func(conn *pgx.Conn) {
+		handlers, err := buildHandlers(ctx, conn)
 		if err != nil {
 			log.Fatal(err)
 		}

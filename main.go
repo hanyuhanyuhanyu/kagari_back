@@ -8,15 +8,15 @@ import (
 	"kagari/persistence"
 	persistenceimpl "kagari/persistence/impl"
 	"kagari/router"
-	"kagari/setting"
 	"log"
 	"os"
 	"time"
 
+	pgx "github.com/jackc/pgx/v5"
+
 	"github.com/gin-contrib/cors"
 	"github.com/gin-gonic/gin"
 	"github.com/joho/godotenv"
-	"github.com/neo4j/neo4j-go-driver/v5/neo4j"
 )
 
 func init() {
@@ -37,13 +37,9 @@ func init() {
 
 func main() {
 	ctx := context.Background()
-	persistence.WithNeo4jConnection(ctx, persistence.ConnectionInfo{
-		ConnectionString: setting.Neo4jConnectionString(),
-		User:             setting.Neo4jUser(),
-		Password:         setting.Neo4jPassword(),
-	}, func(neo4jDriver neo4j.DriverWithContext) {
+	persistence.WithPsqlConnection(ctx, func(conn *pgx.Conn) {
 		r := gin.Default()
-		acc, err := persistenceimpl.NewArticleAccessor(ctx, neo4jDriver)
+		acc, err := persistenceimpl.NewArticleAccessor(ctx, conn)
 		if err != nil {
 			log.Fatalf("create accessor fail %v", err)
 		}

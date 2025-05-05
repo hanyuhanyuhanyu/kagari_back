@@ -14,12 +14,10 @@ import (
 
 	"github.com/aws/aws-sdk-go-v2/service/s3"
 	"github.com/google/uuid"
-	"github.com/neo4j/neo4j-go-driver/v5/neo4j"
-	"github.com/neo4j/neo4j-go-driver/v5/neo4j/dbtype"
-	"github.com/samber/lo"
+	pgx "github.com/jackc/pgx/v5"
 )
 
-func NewArticleAccessor(ctx context.Context, driver neo4j.DriverWithContext) (service.ArticleAccessor, error) {
+func NewArticleAccessor(ctx context.Context, conn *pgx.Conn) (service.ArticleAccessor, error) {
 	s3cli, err := persistence.InitS3Client(ctx)
 	if err != nil {
 		return nil, err
@@ -27,42 +25,51 @@ func NewArticleAccessor(ctx context.Context, driver neo4j.DriverWithContext) (se
 	if s3cli == nil {
 		return nil, errors.New("init s3 client but it somehow became null")
 	}
-	return &ArticleAccessor{driver, s3cli}, nil
+	return &ArticleAccessor{conn, s3cli}, nil
 }
 
 type ArticleAccessor struct {
-	driver neo4j.DriverWithContext
-	s3cli  *s3.Client
+	conn  *pgx.Conn
+	s3cli *s3.Client
 }
 
 func (aa *ArticleAccessor) Search(ctx context.Context, param model.ArticleSearchParameter) ([]entity.Article, error) {
-	result, err := neo4j.ExecuteQuery(ctx, aa.driver, "MATCH (a:Article) ORDER BY a.created_at DESC LIMIT $limit SKIP $offset RETURN a", map[string]any{
-		"limit":  param.GetLimit(),
-		"offset": param.GetOffset(),
-	}, neo4j.EagerResultTransformer)
+	rows, err := aa.conn.Query(ctx, "SELECT id, title, url, created_at FROM articles LIMIT $1 OFFSET $2", param.GetLimit(), param.GetOffset())
 	if err != nil {
 		return nil, err
 	}
-	first := result.Records[0]
-	if first == nil {
-		return nil, nil
+	articles := make([]entity.Article, 0)
+	for rows.Next() {
+		var id, title, url string
+		var createdAt time.Time
+		if err := rows.Scan(&id, &title, &url, &createdAt); err != nil {
+			return nil, err
+		}
+		articles = append(articles, entity.Article{
+			ID:        id,
+			Title:     title,
+			URL:       url,
+			CreatedAt: createdAt,
+		})
 	}
-	return lo.Map(result.Records, func(r *neo4j.Record, _ int) entity.Article {
-		return *(&entity.Article{}).FromMap(r.AsMap()["a"].(dbtype.Node).GetProperties())
-	}), nil
+	return articles, nil
 }
 func (aa *ArticleAccessor) GetOne(ctx context.Context, id string) (*entity.Article, error) {
-	result, err := neo4j.ExecuteQuery(ctx, aa.driver, "MATCH (a:Article {id: $id}) RETURN a", map[string]any{
-		"id": id,
-	}, neo4j.EagerResultTransformer)
+	rows, err := aa.conn.Query(ctx, "SELECT id, title, url, created_at FROM articles WHERE id=$1", id)
 	if err != nil {
 		return nil, err
 	}
-	if len(result.Records) == 0 {
-		return nil, nil
+	var _id, title, url string
+	var createdAt time.Time
+	if err := rows.Scan(&id, &title, &url, &createdAt); err != nil {
+		return nil, err
 	}
-	first := result.Records[0]
-	return (&entity.Article{}).FromMap(first.AsMap()["a"].(dbtype.Node).GetProperties()), nil
+	return &entity.Article{
+		ID:        _id,
+		Title:     title,
+		URL:       url,
+		CreatedAt: createdAt,
+	}, nil
 }
 func createSavePath(originalFileName string) (id, keyPath string) {
 	id = uuid.NewString()
@@ -89,23 +96,21 @@ func (aa *ArticleAccessor) Upload(ctx context.Context, article *model.UploadingA
 	id, key := createSavePath(article.OriginalFileName)
 	bucket := persistence.KagariMarkdownBucket
 	contentType := "text/markdown; charset=UTF-8"
-	sess := aa.driver.NewSession(ctx, neo4j.SessionConfig{})
-	_, err := sess.ExecuteWrite(ctx, func(tx neo4j.ManagedTransaction) (any, error) {
-		_, err := tx.Run(ctx, "MERGE (a:Article {id: $id, url: $url, title: $title, created_at: $created_at})", map[string]any{
-			"id":         id,
-			"title":      article.Title,
-			"url":        key,
-			"created_at": time.Now().UTC(),
-		})
-		if err != nil {
-			return nil, err
-		}
-		err = aa.uploadImages(ctx, article)
-		if err != nil {
-			return nil, err
-		}
-		_, err = aa.s3cli.PutObject(ctx, &s3.PutObjectInput{Bucket: &bucket, Key: &key, Body: bytes.NewReader(article.Body), ContentType: &contentType})
-		return nil, err
-	})
+	tx, err := aa.conn.Begin(ctx)
+	if err != nil {
+		return "", err
+	}
+	_, err = tx.Exec(ctx, "INSERT INTO articles (id, title, url, created_at) VALUES ($1, $2, $3, $4)", id, article.Title, key, time.Now().UTC())
+	if err != nil {
+		tx.Rollback(ctx)
+		return "", err
+	}
+	err = aa.uploadImages(ctx, article)
+	if err != nil {
+		tx.Rollback(ctx)
+		return "", err
+	}
+	_, err = aa.s3cli.PutObject(ctx, &s3.PutObjectInput{Bucket: &bucket, Key: &key, Body: bytes.NewReader(article.Body), ContentType: &contentType})
+	tx.Commit(ctx)
 	return id, err
 }

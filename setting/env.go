@@ -11,3 +11,6 @@ func Neo4jUser() string {
 func Neo4jPassword() string {
 	return os.Getenv("NEO4J_PASSWORD")
 }
+func PsqlPassword() string {
+	return os.Getenv("PSQL_PASSWORD")
+}
