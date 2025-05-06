@@ -34,7 +34,7 @@ type ArticleAccessor struct {
 }
 
 func (aa *ArticleAccessor) Search(ctx context.Context, param model.ArticleSearchParameter) ([]entity.Article, error) {
-	rows, err := aa.conn.Query(ctx, "SELECT id, title, url, created_at FROM articles LIMIT $1 OFFSET $2", param.GetLimit(), param.GetOffset())
+	rows, err := aa.conn.Query(ctx, "SELECT id, title, url, created_at FROM articles LIMIT $1 OFFSET $2 ORDER BY created_at DESC", param.GetLimit(), param.GetOffset())
 	if err != nil {
 		return nil, err
 	}
